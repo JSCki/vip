@@ -1,0 +1,130 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocol Engine // WHO™</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        :root { --bg-dark: #05090f; --bg-container: rgba(13, 17, 23, 0.8); --border-color: #3a3a5e; --primary-glow: #00e5ff; --accent-glow: #e44bff; --text-main: #e0e0e0; --text-secondary: #a0a0c0; --danger-color: #ff4757; }
+        body { font-family: 'JetBrains Mono', monospace; margin: 0; padding: 0; background-color: var(--bg-dark); color: var(--text-main); overflow: hidden; position: relative; }
+        #particle-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .logo { font-size: 2.5em; text-align: center; color: var(--primary-glow); text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); margin-top: 40px; font-weight: 700; }
+        .container-wrapper { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; flex-direction: column; position: absolute; top: 0; left: 0; z-index: 2; }
+        .box { background: var(--bg-container); padding: 40px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 0 40px rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); text-align: center; }
+        .login-box { width: 340px; }
+        .login-box h2 { margin-bottom: 25px; font-size: 2em; color: var(--primary-glow); text-shadow: 0 0 8px rgba(0, 229, 255, 0.7); }
+        .login-box .input-group { position: relative; margin: 20px 0; }
+        .login-box input { width: 100%; padding: 14px 10px 14px 40px; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); font-size: 1em; border-radius: 8px; box-sizing: border-box; transition: all 0.3s ease; }
+        .login-box input:focus { outline: none; border-color: var(--primary-glow); box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+        .login-box .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); }
+        .login-box button { width: 100%; padding: 14px; background-color: var(--primary-glow); color: var(--bg-dark); border: none; border-radius: 8px; font-size: 1.1em; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: all 0.3s ease; }
+        .login-box button:hover { background-color: #fff; box-shadow: 0 0 15px var(--primary-glow); }
+        .owner-contact { margin-top: 25px; }
+        .owner-contact a { color: var(--text-secondary); text-decoration: none; font-size: 0.9em; }
+        .owner-contact a:hover { color: var(--primary-glow); text-decoration: underline; }
+        .dashboard-container { width: 95%; max-width: 420px; }
+        .info-header { text-align: right; margin-bottom: 20px; }
+        .info-header p { margin: 0; color: var(--text-secondary); font-size: 1.1em; }
+        #timer { color: var(--danger-color); font-weight: bold; }
+        .prediction-area { background: var(--bg-dark); padding: 25px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+        .prediction-area .period-info { font-size: 1.1em; color: var(--text-secondary); margin: 0 0 10px 0; }
+        #activePeriod { color: var(--primary-glow); font-weight: bold; }
+        .predicted-result { font-size: 4em; font-weight: bold; margin-top: 10px; }
+        .predicted-big { color: var(--primary-glow); text-shadow: 0 0 15px var(--primary-glow); }
+        .predicted-small { color: var(--accent-glow); text-shadow: 0 0 15px var(--accent-glow); }
+        .history-box { background: var(--bg-dark); padding: 15px; border-radius: 8px; }
+        .history-box h3 { color: var(--primary-glow); margin-bottom: 10px; }
+        .history-box table { width: 100%; border-collapse: collapse; }
+        .history-box th, .history-box td { border-bottom: 1px solid var(--border-color); padding: 8px; }
+    </style>
+    <link rel="stylesheet" href="css/all.min.css">
+</head>
+<body>
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="container-wrapper" id="loginPage">
+        <div class="logo">WHO™</div>
+        <div class="login-box box">
+            <h2>Protocol Engine</h2>
+            <div class="input-group">
+                <i class="fas fa-user-secret"></i>
+                <input type="text" id="username" placeholder="Username" required="">
+            </div>
+            <div class="input-group">
+                <i class="fas fa-key"></i>
+                <input type="password" id="password" placeholder="Daily Password" required="">
+            </div>
+            <button onclick="login()">Initiate Access</button>
+            <div class="owner-contact">
+                <a id="ownerLink" href="#" target="_blank"><i class="fas fa-headset"></i> FOR KEY CONTACT ME BRO</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-wrapper" id="dashboard" style="display:none;">
+        <div class="dashboard-container box">
+            <div class="info-header"><p>Next Signal In: <span id="timer">--:--</span></p></div>
+            <div class="prediction-area">
+                <p class="period-info">Active Period: <span id="activePeriod"></span></p>
+                <div id="predictionResult" class="predicted-result"></div>
+            </div>
+            <div class="history-box">
+                <h3>Recent Signals</h3>
+                <table><thead><tr><th>Period</th><th>Number</th><th>Result</th></tr></thead><tbody id="history"></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ======================== OWNER CONFIGURATION ============================
+        const OWNER_CONFIG = {
+    contactLink: "https://t.me/+qcRQjc0K7bphZjA1",
+    username: "TEAM",
+    password: "SA"
+};
+        // =========================================================================
+
+        document.getElementById('ownerLink').href = OWNER_CONFIG.contactLink;
+
+        // --- Dynamic Particle Background ---
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let particlesArray;
+        class Particle { constructor(x, y, dX, dY, s, c) { this.x = x; this.y = y; this.directionX = dX; this.directionY = dY; this.size = s; this.color = c; } draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, !1); ctx.fillStyle = this.color; ctx.fill(); } update() { (this.x > canvas.width || this.x < 0) && (this.directionX = -this.directionX), (this.y > canvas.height || this.y < 0) && (this.directionY = -this.directionY), this.x += this.directionX, this.y += this.directionY, this.draw(); } }
+        function initParticles() { particlesArray = []; let n = (canvas.height * canvas.width) / 9e3; for (let t = 0; t < n; t++) { let s = 1 * Math.random() + 1, o = Math.random() * (innerWidth - 2 * s - 2 * s) + 2 * s, e = Math.random() * (innerHeight - 2 * s - 2 * s) + 2 * s, a = .4 * Math.random() - .2, h = .4 * Math.random() - .2, i = "rgba(0, 229, 255, 0.8)"; particlesArray.push(new Particle(o, e, a, h, s, i)); } }
+        function connectParticles() { let n = 1; for (let t = 0; t < particlesArray.length; t++) for (let s = t; s < particlesArray.length; s++) { let o = (particlesArray[t].x - particlesArray[s].x) * (particlesArray[t].x - particlesArray[s].x) + (particlesArray[t].y - particlesArray[s].y) * (particlesArray[t].y - particlesArray[s].y); o < (canvas.width / 7) * (canvas.height / 7) && (n = 1 - o / 2e4, ctx.strokeStyle = `rgba(192, 97, 255, ${n})`, ctx.lineWidth = 1, ctx.beginPath(), ctx.moveTo(particlesArray[t].x, particlesArray[t].y), ctx.lineTo(particlesArray[s].x, particlesArray[s].y), ctx.stroke()); } }
+        function animateParticles() { requestAnimationFrame(animateParticles); ctx.clearRect(0, 0, innerWidth, innerHeight); for (let n = 0; n < particlesArray.length; n++) particlesArray[n].update(); connectParticles(); }
+        initParticles(); animateParticles(); window.addEventListener('resize', () => { canvas.width = innerWidth; canvas.height = innerHeight; initParticles(); });
+
+        // --- Daily Password Generator (MUST BE SAME AS IN GENERATOR FILE) ---
+        function generateDailyPassword() {
+            const now = new Date();
+            const year = now.getFullYear(); const month = now.getMonth() + 1; const day = now.getDate();
+            const secretWords = ["ALPHA", "MATRIX", "QUANTUM", "CYBER", "PROTOCOL", "ENGINE", "WHO", "DELTA", "OMEGA", "ZERO"];
+            const wordIndex = (day + month) % secretWords.length;
+            const numberPart = ((day * 7) + (month * 3) + (year % 100)) % 1000;
+            return `${secretWords[wordIndex]}${String(numberPart).padStart(3, '0')}`;
+        }
+
+        function login() {
+            const correctPassword = generateDailyPassword();
+          if (document.getElementById('username').value === OWNER_CONFIG.username &&
+    document.getElementById('password').value === OWNER_CONFIG.password) {
+                document.getElementById("loginPage").style.display = "none";
+                document.getElementById("dashboard").style.display = "flex";
+                startPredictionEngine();
+            } else {
+                alert("Access Denied: Invalid Credentials.");
+            }
+        }
+        
+        // --- PREDICTION ENGINE ---
+        const AppState = { currentPeriod: "", predictionHistory: [] };
+        function generatePeriodNumber() { const now = new Date(); const year = now.getFullYear(); const month = String(now.getMonth() + 1).padStart(2, '0'); const day = String(now.getDate()).padStart(2, '0'); const totalMinutes = now.getHours() * 60 + now.getMinutes(); const periodOfTheDay = String(totalMinutes + 1).padStart(4, '0'); return `${year}${month}${day}${periodOfTheDay}`; }
+        function getPredictionForPeriod(periodString) { const seed = parseInt(periodString.slice(-4)); const stepInCycle = (seed - 1) % 19; let resultType; if (stepInCycle < 2) { resultType = "BIG"; } else if (stepInCycle < 5) { resultType = "SMALL"; } else if (stepInCycle < 8) { resultType = "BIG"; } else if (stepInCycle < 10) { resultType = "SMALL"; } else if (stepInCycle < 11) { resultType = "BIG"; } else if (stepInCycle < 12) { resultType = "SMALL"; } else if (stepInCycle < 16) { resultType = "SMALL"; } else { resultType = "BIG"; } let predictedNumber; const numberSeed = parseInt(periodString.slice(-6)); if (resultType === "BIG") { predictedNumber = 5 + (numberSeed % 5); } else { predictedNumber = numberSeed % 5; } return { number: predictedNumber, type: resultType, period: periodString }; }
+        function updateUI(prediction) { document.getElementById("activePeriod").textContent = prediction.period; const predictionDiv = document.getElementById("predictionResult"); predictionDiv.innerHTML = `<span>${prediction.number}</span> <span>(${prediction.type})</span>`; predictionDiv.className = `predicted-result ${prediction.type === 'BIG' ? 'predicted-big' : 'predicted-small'}`; const historyTable = document.getElementById("history"); const newRow = historyTable.insertRow(0); if (historyTable.rows.length > 5) { historyTable.deleteRow(5); } newRow.innerHTML = `<td>${prediction.period}</td><td>${prediction.number}</td><td style="color:${prediction.type === 'BIG' ? 'var(--primary-glow)' : 'var(--accent-glow)'}; font-weight:bold;">${prediction.type}</td>`; }
+        function startPredictionEngine() { function runCycle() { const seconds = new Date().getSeconds(); if (seconds >= 53) { document.getElementById("timer").textContent = `WAITING...`; } else { const displaySeconds = 52 - seconds; document.getElementById("timer").textContent = `00:${String(displaySeconds).padStart(2, '0')}`; } if (seconds === 0) { const newPeriod = generatePeriodNumber(); if (newPeriod !== AppState.currentPeriod) { AppState.currentPeriod = newPeriod; const prediction = getPredictionForPeriod(newPeriod); updateUI(prediction); } } } const initialPeriod = generatePeriodNumber(); AppState.currentPeriod = initialPeriod; const initialPrediction = getPredictionForPeriod(initialPeriod); updateUI(initialPrediction); setInterval(runCycle, 1000); }
+    </script>
+
+</body></html>
